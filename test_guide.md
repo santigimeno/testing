@@ -78,11 +78,23 @@ This is the body of the test. This test is quite simple, it just tests that an H
 
 ## General recommendations
 
-- The use of timers is discouraged, unless we're testing timers. The reasons for this are multiple. Mainly, they are a source of flakiness. For a thorough explanation go [here](https://github.com/nodejs/testing/issues/27).
+### Timers
 
-- Make use of the helpers from the `common` module as much as possible.
+The use of timers is discouraged, unless we're testing timers. The reasons for this are multiple. Mainly, they are a source of flakiness. For a thorough explanation go [here](https://github.com/nodejs/testing/issues/27).
 
-  One interesting case is `common.mustCall`. The use of `common.mustCall` may avoid the use of extra variables and the corresponding assertions. Let's explain this with a real test from the test suite.
+In the event a timer is needed, it's recommended using the `common.platformTimeout()` method, that allows setting specific timeouts depending on the platform. For example:
+
+```
+const timer = setTimeout(fail, common.platformTimeout(4000));
+```
+
+will create a 4-seconds timeout, except for some platforms where the delay will be multiplied for some factor.
+
+### The *common* API
+
+Make use of the helpers from the `common` module as much as possible.
+
+One interesting case is `common.mustCall`. The use of `common.mustCall` may avoid the use of extra variables and the corresponding assertions. Let's explain this with a real test from the test suite.
 
 ```javascript
 'use strict';
@@ -134,4 +146,21 @@ var server = http.createServer(common.mustCall(function(req, res) {
   }));
 });
 
+```
+
+### Flags
+
+Some tests will require running Node.js with specific command line flags set. To accomplish
+this, a `// Flags: ` comment should be added in the preamble of the test followed by the flags.
+For example, to allow a test to require some of the `internal/*` modules, the `--expose-internals`
+flag should be added. A test that would require `internal/freelist` could start like this:
+
+```javascript
+'use strict';
+
+// Flags: --expose-internals
+
+require('../common');
+const assert = require('assert');
+const freelist = require('internal/freelist');
 ```
